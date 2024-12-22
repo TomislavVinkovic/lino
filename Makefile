@@ -1,6 +1,6 @@
 CC=gcc
-SRC=${wildcard *.cpp}
-OBJ=${SRC:.cpp=.o}
+SRC=${wildcard *.c}
+OBJ=${SRC:.c=.o}
 FILENAME=nano
 
 all: build clean
