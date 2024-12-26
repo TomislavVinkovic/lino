@@ -1,9 +1,9 @@
 CC=gcc
 SRC=${wildcard *.c}
 OBJ=${SRC:.c=.o}
-FILENAME=nano
+FILENAME=lino
 
-all: build clean
+all: clean build
 
 build: ${OBJ}
 	${CC} ${OBJ} -o ${FILENAME}
