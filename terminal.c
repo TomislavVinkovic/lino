@@ -100,12 +100,33 @@ void editorProcessKeypress() {
 }
 
 void editorDrawRows(struct abuf* ab) {
-    char buffer[20];
     int i;
 
-
     for(i = 0; i < E.screenrows; i++) {
-        abAppend(ab, "~", 1);
+        if(i == E.screenrows / 3) {
+            char welcome[80];
+            int welcomelen = snprintf(
+                welcome,
+                sizeof(welcome),
+                "Lino editor -- version %s",
+                LINO_VERSION
+            );
+
+            // prevent horizontal screen overflow
+            if(welcomelen > E.screencolumns) welcomelen = E.screencolumns;
+            int padding = (E.screencolumns - welcomelen) / 2;
+            if(padding) {
+                abAppend(ab, "~", 1);
+                padding--;
+            }
+            while(padding--) abAppend(ab, " ", 1);
+                        
+            abAppend(ab, welcome, welcomelen);
+        }
+        else {
+            abAppend(ab, "~", 1);
+        }
+        
 
 
         // clear line
