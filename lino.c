@@ -11,23 +11,13 @@
 #include "terminal.h"
 
 int main(int argc, char** argv) {
-
+    
     enableRawMode();
-
+    initEditor();
     
     while (true) {
-        char c = '\0';
-        // the second exit condition makes it compatible with cygwin
-        if(read(STDIN_FILENO, &c, 1) == -1 && errno != EAGAIN) die("read");
-        if(iscntrl(c)) {
-            printf("%d\r\n", c);
-        }
-        else {
-            printf("%d ('%c')\r\n", c, c);
-        }
-        if(c == 'q') {
-            break;
-        }
+        editorRefreshScreen();
+        editorProcessKeypress();
     }
     
     disableRawMode();

@@ -9,10 +9,43 @@
 #include <unistd.h>
 #include <termios.h>
 
-extern struct termios orig_termios;
+#define CTRL_KEY(k) ((k) & 0x1f)
 
+struct editorConfig {
+    struct termios orig_termios;
+    int screenrows;
+    int screencolumns;
+};
+
+extern struct editorConfig E;
+
+struct abuf {
+    char* b;
+    int len;
+};
+#define ABUF_INIT {NULL, 0}
+
+// terminal
 void disableRawMode();
 void enableRawMode();
 void die();
+int getWindowSize(int* rows, int* cols);
+int getCursorPosition(int* rows, int* cols);
+
+// input
+char editorReadKey();
+void editorProcessKeypress();
+
+// output
+void editorDrawRows(struct abuf* ab);
+void editorRefreshScreen();
+
+// init
+void initEditor();
+
+// append buffer
+void abAppend(struct abuf* ab, const char* s, int len);
+void abFree(struct abuf* ab);
+
 
 #endif
