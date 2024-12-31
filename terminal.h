@@ -13,7 +13,22 @@
 
 #define CTRL_KEY(k) ((k) & 0x1f)
 
+enum editorKey {
+    ARROW_LEFT = 1000,
+    ARROW_RIGHT,
+    ARROW_UP,
+    ARROW_DOWN,
+
+    DEL_KEY,
+    HOME_KEY,
+    END_KEY,
+
+    PAGE_UP,
+    PAGE_DOWN
+};
+
 struct editorConfig {
+    int cx, cy; // cursor positions
     struct termios orig_termios;
     int screenrows;
     int screencolumns;
@@ -35,8 +50,9 @@ int getWindowSize(int* rows, int* cols);
 int getCursorPosition(int* rows, int* cols);
 
 // input
-char editorReadKey();
+int editorReadKey();
 void editorProcessKeypress();
+void editorMoveCursor(int key);
 
 // output
 void editorDrawRows(struct abuf* ab);
