@@ -188,31 +188,37 @@ void editorDrawRows(struct abuf* ab) {
     int i;
 
     for(i = 0; i < E.screenrows; i++) {
-        if(i == E.screenrows / 3) {
-            char welcome[80];
-            int welcomelen = snprintf(
-                welcome,
-                sizeof(welcome),
-                "Lino editor -- version %s",
-                LINO_VERSION
-            );
+        int filerow = i + E.rowoff;
+        if(filerow >= E.numrows) {
+            if(E.numrows == 0 && i == E.screenrows / 3) {
+                char welcome[80];
+                int welcomelen = snprintf(
+                    welcome,
+                    sizeof(welcome),
+                    "Lino editor -- version %s",
+                    LINO_VERSION
+                );
 
-            // prevent horizontal screen overflow
-            if(welcomelen > E.screencolumns) welcomelen = E.screencolumns;
-            int padding = (E.screencolumns - welcomelen) / 2;
-            if(padding) {
-                abAppend(ab, "~", 1);
-                padding--;
+                // prevent horizontal screen overflow
+                if(welcomelen > E.screencolumns) welcomelen = E.screencolumns;
+                int padding = (E.screencolumns - welcomelen) / 2;
+                if(padding) {
+                    abAppend(ab, "~", 1);
+                    padding--;
+                }
+                while(padding--) abAppend(ab, " ", 1);
+
+                abAppend(ab, welcome, welcomelen);
             }
-            while(padding--) abAppend(ab, " ", 1);
-
-            abAppend(ab, welcome, welcomelen);
+            else {
+                abAppend(ab, "~", 1);
+            }
         }
         else {
-            abAppend(ab, "~", 1);
+            int len = E.row[filerow].size;
+            if(len > E.screencolumns) len = E.screencolumns;
+            abAppend(ab, E.row[filerow].chars, len);
         }
-        
-
 
         // clear line
         abAppend(ab, "\x1b[K", 3);
@@ -235,12 +241,14 @@ void editorMoveCursor(int c) {
             if(E.cy != 0) E.cy--;
             break;
         case ARROW_DOWN:
-            if(E.cy != E.screenrows - 1) E.cy++;
+            if(E.cy < E.numrows) E.cy++;
             break;
     }
 }
 
 void editorRefreshScreen() {
+
+    editorScroll();
 
     struct abuf ab = ABUF_INIT;
 
@@ -259,7 +267,13 @@ void editorRefreshScreen() {
     // draw the cursor at the exact position (cx, cy)
     // cursor positions are 1-indexed, not 0-indexed
     char buf[32];
-    snprintf(buf, sizeof(buf), "\x1b[%d;%dH", E.cy + 1, E.cx + 1);
+    snprintf(
+        buf, 
+        sizeof(buf), 
+        "\x1b[%d;%dH", 
+        (E.cy - E.rowoff) + 1, 
+        E.cx + 1
+    );
     abAppend(&ab, buf, strlen(buf));
 
     // show cursor
@@ -307,6 +321,9 @@ int getWindowSize(int* rows, int* cols) {
 void initEditor() {
     E.cx = 0;
     E.cy = 0;
+    E.rowoff = 0;
+    E.numrows = 0;
+    E.row = NULL;
 
     if(getWindowSize(&(E.screenrows), &(E.screencolumns)) == -1) {
         die("getWindowSize");
@@ -324,4 +341,48 @@ void abAppend(struct abuf* ab, const char* s, int len) {
 
 void abFree(struct abuf* ab) {
     free(ab->b);
+}
+
+void editorOpen(char* filename) {
+    FILE* fp = fopen(filename, "r");
+    if(!fp) die("fopen");
+
+    char* line = NULL;
+    size_t linecap = 0;
+    ssize_t linelen;
+
+    // if linelen <> EOF
+    while((linelen = getline(&line, &linecap, fp)) != -1) {
+        // cut off carriage return and new line
+        while(
+            linelen > 0 &&
+            (line[linelen - 1] == '\n' || line[linelen - 1] == '\r')
+        ) {
+            linelen--;
+        }
+        editorAppendRow(line, linelen);
+    }
+    free(line);
+    fclose(fp);
+}
+
+void editorAppendRow(char* s, size_t len) {
+    E.row = realloc(E.row, sizeof(erow) * (E.numrows + 1));
+
+    int at = E.numrows;
+    E.row[at].size = len;
+    E.row[at].chars = malloc(len + 1);
+    memcpy(E.row[at].chars, s, len);
+
+    E.row[at].chars[len] = '\0';
+    E.numrows++;
+}
+
+void editorScroll() {
+    if(E.cy < E.rowoff) {
+        E.rowoff = E.cy;
+    }
+    if(E.cy >= E.rowoff + E.screenrows) {
+        E.rowoff = E.cy - E.screenrows + 1;
+    }
 }

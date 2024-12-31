@@ -3,6 +3,10 @@
 
 // TODO: Document header file
 
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU_SOURCE
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdlib.h>
@@ -27,11 +31,19 @@ enum editorKey {
     PAGE_DOWN
 };
 
+typedef struct erow {
+    int size;
+    char *chars;
+} erow;
+
 struct editorConfig {
     int cx, cy; // cursor positions
+    int rowoff; // vertical scroll
     struct termios orig_termios;
     int screenrows;
     int screencolumns;
+    int numrows;
+    erow* row;
 };
 
 extern struct editorConfig E;
@@ -57,6 +69,7 @@ void editorMoveCursor(int key);
 // output
 void editorDrawRows(struct abuf* ab);
 void editorRefreshScreen();
+void editorScroll();
 
 // init
 void initEditor();
@@ -65,5 +78,10 @@ void initEditor();
 void abAppend(struct abuf* ab, const char* s, int len);
 void abFree(struct abuf* ab);
 
+// row operations
+void editorAppendRow(char* s, size_t len);
+
+// file i/o
+void editorOpen(char* filename);
 
 #endif
